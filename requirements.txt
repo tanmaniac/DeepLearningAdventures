@@ -1,2 +1,6 @@
 pandas==0.23.1
 jupyter==1.0.0
+tensorflow-gpu==1.8.0
+yapf==0.22.0
+scikit-learn==0.19.1
+scipy==1.1.0
