@@ -1,0 +1,35 @@
+FROM ubuntu:16.04
+LABEL maintainers="Tanmay Bangalore <tanmaybangalore@gmail.com>"
+
+ARG TENSORFLOW_VERSION=1.8.0
+
+# Install dependencies for Tensorflow
+RUN apt-get update && apt-get install -y sudo python-pip python-dev python3-pip python3-dev \
+    libncurses5-dev libjpeg-turbo8-dev zlib1g-dev python3-tk python3-venv tmux && \
+    pip3 install --upgrade pip virtualenv && \
+    apt-get clean && apt-get autoremove && rm -rf /var/lib/apt/lists/*
+
+RUN pip3 --no-cache-dir install --upgrade \
+    https://storage.googleapis.com/tensorflow/linux/cpu/tensorflow-${TENSORFLOW_VERSION}-cp35-cp35m-linux_x86_64.whl
+
+# Install PyTorch
+RUN pip3 install http://download.pytorch.org/whl/cpu/torch-0.4.0-cp35-cp35m-linux_x86_64.whl && \
+    pip3 install torchvision
+
+# Make a home directory so everything isn't just owned by root
+ARG UID=1000
+ARG GID=1000
+ARG UNAME="cs231n"
+
+RUN mkdir -p /home/${UNAME} &&\
+    echo "${UNAME}:x:${UID}:${GID}:${UNAME},,,:/home/${UNAME}:/bin/bash" >> /etc/passwd &&\
+    echo "${UNAME}:x:${UID}:" >> /etc/group &&\
+    echo "${UNAME} ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/${UNAME} &&\
+    chmod 0440 /etc/sudoers.d/${UNAME} &&\
+    chown ${UID}:${GID} -R /home/${UNAME}
+
+USER ${UNAME}
+ENV HOME /home/${UNAME}
+
+# Expose ports for TensorBoard (6006) and iPython(8888)
+EXPOSE 6006 8888
