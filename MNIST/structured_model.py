@@ -98,7 +98,7 @@ def main():
     logdir = "/tmp/mnist_structured/" + now.strftime("%Y%m%d-%H%M%S") + "/"
 
     # Get MNIST data
-    mnist = input_data.read_data_sets('./MNIST-data/', one_hot=True)
+    mnist = input_data.read_data_sets('../Datasets/mnist/', one_hot=True)
     train_images_shuf, train_labels_shuf = shuffle(mnist.train.images, mnist.train.labels)
 
     # Split into training and validation sets
