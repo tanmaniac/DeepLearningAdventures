@@ -15,7 +15,7 @@ if [ ! "$(docker ps -q -f name=${CONTAINER_NAME})" ]; then
     --privileged \
     --name ${CONTAINER_NAME} \
     -p 8888:8888 -p 6006:6006 \
-    -v $(pwd)/../../tensorflow:/home/$(id -un)/tensorflow \
+    -v $(pwd)/../../DeepLearningAdventures:/home/$(id -un)/DeepLearningAdventures \
     ${REPO}/${IMAGE}:${TAG} \
     /bin/bash
 fi
