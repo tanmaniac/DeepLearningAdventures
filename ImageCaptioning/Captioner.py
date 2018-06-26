@@ -1,12 +1,18 @@
 # Adapted from https://danijar.com/structuring-your-tensorflow-models/
 # Using a different architecture, though
 
+import coco
 import functools
 import numpy as np
-import tensorflow as tf
-from tensorflow.examples.tutorials.mnist import input_data
-from sklearn.utils import shuffle
 from datetime import datetime
+import os
+import matplotlib.pyplot as plt
+from PIL import Image
+from cache import cache
+from enum import Enum
+
+import tensorflow as tf
+from tensorflow.python.keras.applications import VGG16
 
 
 def doublewrap(function):
@@ -48,6 +54,12 @@ def define_scope(function, scope=None, *args, **kwargs):
         return getattr(self, attribute)
 
     return decorator
+
+
+class Dataset(Enum):
+    TRAIN = 1
+    VAL = 2
+    TEST = 3
 
 
 class Model:
@@ -92,79 +104,71 @@ class Model:
         return err_mean
 
 
+def load_image(path, size=None):
+    """
+    Load the image from the given file path and resize it to the given size if not None.
+    """
+
+    # Load the image using PIL
+    img = Image.open(path)
+
+    # Resize image if desired
+    if not size is None:
+        img = img.resize(size=size, resample=Image.LANCZOS)
+
+    # Convert image to numpy array
+    img = np.array(img)
+
+    # Scale image pixels so they fall between 0 and 1
+    img = img / 255.0
+
+    # Convert 2-dim grayscale array to 3-dim RGB array (1 channel to 3)
+    if (len(img.shape) == 2):
+        img = np.repeat(img[:, :, np.newaxis], 3, axis=2)
+
+    return img
+
+
+def show_image(idx, filenames_set, captions_set):
+    """
+    Load and plot an image from the training or validation set with the given index
+    """
+
+    # Use an image from the training set
+    dir = coco.train_dir
+    filename = filenames_set[idx]
+    captions = captions_set[idx]
+
+    # Path for the image file
+    path = os.path.join(dir, filename)
+
+    # Print the captions for the image
+    for caption in captions:
+        print(caption)
+
+    # Load the image and plot it
+    img = load_image(path)
+    plt.imshow(img)
+    plt.show()
+
+
 def main():
     # Logging stuff
     now = datetime.now()
-    logdir = "/tmp/mnist_structured/" + now.strftime("%Y%m%d-%H%M%S") + "/"
+    logdir = "/tmp/image_captioning/" + now.strftime("%Y%m%d-%H%M%S") + "/"
 
-    # Get MNIST data
-    mnist = input_data.read_data_sets('../Datasets/mnist/', one_hot=True)
-    train_images_shuf, train_labels_shuf = shuffle(mnist.train.images, mnist.train.labels)
+    # Get Coco dataset
+    coco.set_data_dir("../Datasets/coco/")
+    coco.maybe_download_and_extract()
 
-    # Split into training and validation sets
-    train_size = train_images_shuf.shape[0]
-    split_size = int(train_size * 0.9)
+    # Get file names and captions
+    _, filenames_train, captions_train = coco.load_records(train=True)
 
-    train_images = train_images_shuf[:split_size]
-    train_labels = train_labels_shuf[:split_size]
-    val_images = train_images_shuf[split_size:]
-    val_labels = train_labels_shuf[split_size:]
+    num_images_train = len(filenames_train)
+    print("Number of training images = {}".format(num_images_train))
 
-    NUM_EPOCHS = 20  # How many epochs should we train for?
-    BATCH_SIZE = 512  # How big are our minibatches?
-    NUM_BATCHES = int(split_size / BATCH_SIZE)
-    VAL_BATCHES = int((train_size - split_size) / BATCH_SIZE)
-    # Placeholder to switch between batch sizes
-    batch_size = tf.placeholder(tf.int64)
-
-    image = tf.placeholder(tf.float32, [None, 784])
-    label = tf.placeholder(tf.float32, [None, 10])
-    mode = tf.placeholder(tf.string)
-
-    # datasets from numpy arrays
-    dataset = tf.data.Dataset.from_tensor_slices((image, label)).batch(batch_size).repeat()
-    iter = dataset.make_initializable_iterator()
-    features, labels = iter.get_next()
-
-    model = Model(features, labels, mode)
-
-    with tf.Session() as sess:
-        writer = tf.summary.FileWriter(logdir, graph=tf.get_default_graph())
-        summary_op = tf.summary.merge_all()
-        counter = 0
-        sess.run(tf.global_variables_initializer())
-        print('Training!')
-        for i in range(NUM_EPOCHS):
-            # Initialize iterator with training data
-            sess.run(
-                iter.initializer,
-                feed_dict={
-                    image: train_images,
-                    label: train_labels,
-                    batch_size: BATCH_SIZE
-                })
-            for _ in range(NUM_BATCHES):
-                summary, _ = sess.run([summary_op, model.optimize], feed_dict={mode: "train"})
-                writer.add_summary(summary, global_step=counter)
-                counter += 1
-                #sess.run(model.optimize, feed_dict={mode: "train"})
-
-            # Iterator with validation data
-            sess.run(
-                iter.initializer,
-                feed_dict={
-                    image: val_images,
-                    label: val_labels,
-                    batch_size: val_images.shape[0]
-                })
-            # Iterate over validation set
-            total_error = 0.0
-            for _ in range(VAL_BATCHES):
-                total_error += sess.run(model.error, feed_dict={mode: "eval"})
-            mean_error = total_error / VAL_BATCHES
-            print('Epoch {}: Validation error {:6.2f}%'.format(i, 100 * mean_error))
-
-        writer.close()
+    image_model = VGG16(include_top=True, weights='imagenet')
+    image_model.summary()
 
 
 if __name__ == '__main__':

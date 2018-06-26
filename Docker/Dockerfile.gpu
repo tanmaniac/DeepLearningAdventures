@@ -5,8 +5,8 @@ ARG TENSORFLOW_VERSION=1.8.0
 
 # Install dependencies for Tensorflow + fast inference with TensorRT
 RUN apt-get update && apt-get install -y sudo python-pip python-dev python3-pip python3-dev \
-    libncurses5-dev libjpeg-turbo8-dev zlib1g-dev python3-tk python3-venv tmux \
-    cuda-command-line-tools-9-0 wget apt-utils && \
+    libncurses5-dev libjpeg-turbo8-dev zlib1g-dev python3-tk python3-venv tmux libglib2.0-0 \
+    cuda-command-line-tools-9-0 wget apt-utils libsm-dev && \
     pip3 install --upgrade pip virtualenv && \
     echo "export LD_LIBRARY_PATH=${LD_LIBRARY_PATH:+${LD_LIBRARY_PATH}:}/usr/local/cuda/extras/CUPTI/lib64" >> /etc/environment && \
     \

@@ -4,3 +4,7 @@ tensorflow-gpu==1.8.0
 yapf==0.22.0
 scikit-learn==0.19.1
 scipy==1.1.0
+imagenetscraper==1.0
+matplotlib==2.2.2
+keras==2.2.0
+opencv-python==3.4.1.15

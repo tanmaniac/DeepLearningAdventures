@@ -5,7 +5,8 @@ ARG TENSORFLOW_VERSION=1.8.0
 
 # Install dependencies for Tensorflow
 RUN apt-get update && apt-get install -y sudo python-pip python-dev python3-pip python3-dev \
-    libncurses5-dev libjpeg-turbo8-dev zlib1g-dev python3-tk python3-venv tmux && \
+    libncurses5-dev libjpeg-turbo8-dev zlib1g-dev python3-tk python3-venv tmux libglib2.0-0 \
+    libsm-dev && \
     pip3 install --upgrade pip virtualenv && \
     apt-get clean && apt-get autoremove && rm -rf /var/lib/apt/lists/*
 
